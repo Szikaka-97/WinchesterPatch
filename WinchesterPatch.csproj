@@ -28,6 +28,9 @@
     <Reference Include="FMODDef">
       <HintPath>lib\FMODDef.dll</HintPath>
     </Reference>
+    <Reference Include="R2CustomSounds">
+      <HintPath>lib\R2CustomSounds.dll</HintPath>
+    </Reference>
     <Reference Include="Wolfire.Receiver2">
       <HintPath>..\WhiskeyPatch\lib\Wolfire.Receiver2.dll</HintPath>
     </Reference>

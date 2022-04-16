@@ -24,6 +24,25 @@ namespace WinchesterPatch
 
         public int ammoCount {
             get { return rounds.Count; }
+
+            set {
+                rounds.Clear();
+
+                value = Mathf.Max(maxCapacity, value);
+
+                for (int i = 0; i < value; i++) {
+                    ShellCasingScript round = Instantiate(transform.parent.GetComponent<GunScript>().loaded_cartridge_prefab.GetComponent<ShellCasingScript>());
+
+                    round.Move(slot);
+
+                    round.transform.parent = transform;
+                    round.transform.localScale = Vector3.one;
+                    round.transform.localPosition = roundPositions[i].localPosition;
+                    round.transform.localRotation = roundPositions[i].localRotation;
+
+                    rounds.Push(round);
+                }
+            }
         }
 
         public bool ready {
@@ -92,7 +111,7 @@ namespace WinchesterPatch
 
             loadProgress = 0;
 
-            AudioManager.PlayOneShotAttached("event:/guns/model10/insert_bullet", gameObject);
+            AudioManager.PlayOneShotAttached("custom:/winchester/shell/m1897_shell_insert", gameObject);
         }
 
         public ShellCasingScript removeRound() {

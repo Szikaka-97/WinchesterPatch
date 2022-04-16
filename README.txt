@@ -18,9 +18,15 @@ Copy Winchester_1897 folder to %AppData%/LocalLow/Wolfire Games/Receiver2/Guns  
  - Special 12 gauge shell                                                     ║
  - Every shot fires 8 pellets with maximum deviation of 2 deg to either side  ║
 ═══════════════════════════════╦══════════════════════════════════════════════╝
-Controls:                      ║
-    R - Action open/close      ║
-    E - Prepare to add rounds  ║
-    Z - Add rounds             ║
-    F - Cock hammer            ║
-═══════════════════════════════╝
+    Controls:                  ║
+R - Action open/close          ║
+E - Prepare to add rounds      ║
+Z - Add rounds                 ║
+F - Cock hammer                ║
+═══════════════════════════════╩══════════════════════════════════╗
+    Changes:                                                      ║
+ - Added custom sounds (thanks to Heloft#4509)                    ║
+ - Fixed a bug where shells would be loaded with weird positions  ║
+ - Added the ability to do a press check                          ║
+ - Gun state is now randomized at the start of a session          ║
+ ═════════════════════════════════════════════════════════════════╝
