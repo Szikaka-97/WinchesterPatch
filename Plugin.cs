@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using BepInEx.Configuration;
 using HarmonyLib;
 using Receiver2;
 using UnityEngine;
@@ -14,7 +15,7 @@ using R2CustomSounds;
 namespace WinchesterPatch
 {
 	[BepInDependency("R2CustomSounds")]
-	[BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
+	[BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, "1.1.1")]
 	public class Plugin : BaseUnityPlugin
 	{
 		private enum ActionState {
@@ -29,6 +30,9 @@ namespace WinchesterPatch
 		private static readonly int gun_model = 1003;    
 
 		private static GameObject instance;
+
+		private static ConfigEntry<string> loading_type;
+		private static ConfigEntry<string> stock_color;
 
 		private static MethodInfo tryFireBullet;
 		private static MethodInfo getLastBullet;
@@ -95,6 +99,134 @@ namespace WinchesterPatch
 			if (instance.shots_until_dirty > 0) {
 				instance.shots_until_dirty--;
 			}
+		}
+
+		private static void TryFireBulletShotgun(ref GunScript __instance) {
+			Vector3 originalRotation = __instance.transform.Find("point_bullet_fire").localEulerAngles;
+
+			if (loading_type.Value == "slug") {
+				__instance.rotation_transfer_y_min = 15;
+				__instance.rotation_transfer_y_max = 40;
+				__instance.recoil_transfer_x_min = 200f;
+				__instance.recoil_transfer_x_max = 400f;
+				__instance.recoil_transfer_y_min = -100f;
+				__instance.recoil_transfer_y_max = 100f;
+
+				__instance.transform_bullet_fire.localEulerAngles += new Vector3(
+					UnityEngine.Random.Range(-0.2f, 0.2f),
+					UnityEngine.Random.Range(-0.2f, 0.2f),
+					0
+				);
+
+				tryFireBullet.Invoke(__instance, new object[] { 1 });
+
+				__instance.rotation_transfer_y_min = 1;
+				__instance.rotation_transfer_y_max = 2;
+				__instance.recoil_transfer_x_min = 30f;
+				__instance.recoil_transfer_x_max = 60f;
+				__instance.recoil_transfer_y_min = -40f;
+				__instance.recoil_transfer_y_max = 40f;
+
+				return;
+			}
+
+			__instance.transform_bullet_fire.localEulerAngles += new Vector3(
+					UnityEngine.Random.Range(-1, 1),
+					UnityEngine.Random.Range(-1, 1),
+					0
+			);
+
+			tryFireBullet.Invoke(__instance, new object[] { 1 });
+
+			if (__instance.dry_fired) return;
+
+			switch (loading_type.Value) {
+				case "buckshot": //8 pellets
+					for (int i = 0; i < 7; i++) {
+						float angle = UnityEngine.Random.Range(0f, (float) Math.PI * 2);
+						float diversion = UnityEngine.Random.Range(0f, 2f);
+
+						float moveX = Mathf.Sin(angle) * diversion;
+						float moveY = Mathf.Cos(angle) * diversion;
+
+						__instance.transform_bullet_fire.localEulerAngles += new Vector3(
+							moveX,
+							moveY,
+							0
+						);
+
+						FireBulletShotgun(__instance, __instance.round_in_chamber);
+
+						__instance.transform_bullet_fire.localEulerAngles = originalRotation;
+					}
+					break;
+				case "birdshot": //72 pellets
+					__instance.rotation_transfer_y_min = 0.1f;
+					__instance.rotation_transfer_y_max = 0.3f;
+					__instance.recoil_transfer_x_min = 1f;
+					__instance.recoil_transfer_x_max = 10f;
+					__instance.recoil_transfer_y_min = -5f;
+					__instance.recoil_transfer_y_max = 5f;
+
+					for (int i = 0; i < 71; i++) {
+						float angle = UnityEngine.Random.Range(0f, (float) Math.PI * 2);
+						float diversion = UnityEngine.Random.Range(0f, 5f);
+
+						float moveX = Mathf.Sin(angle) * diversion;
+						float moveY = Mathf.Cos(angle) * diversion;
+
+						__instance.transform_bullet_fire.localEulerAngles += new Vector3(
+							moveX,
+							moveY,
+							0
+						);
+
+						FireBulletShotgun(__instance, __instance.round_in_chamber);
+
+						__instance.transform_bullet_fire.localEulerAngles = originalRotation;
+					}
+
+					__instance.rotation_transfer_y_min = 1f;
+					__instance.rotation_transfer_y_max = 2f;
+					__instance.recoil_transfer_x_min = 30f;
+					__instance.recoil_transfer_x_max = 60f;
+					__instance.recoil_transfer_y_min = -40f;
+					__instance.recoil_transfer_y_max = 40f;
+
+					break;
+				case "iwan_load": //420 pellets
+					__instance.rotation_transfer_y_min = 0.05f;
+					__instance.rotation_transfer_y_max = 0.1f;	
+					__instance.recoil_transfer_y_min = 0f;
+					__instance.recoil_transfer_y_max = 10f;
+
+					for (int i = 0; i < 419; i++) {
+						float angle = UnityEngine.Random.Range(0f, (float) Math.PI * 2);
+						float diversion = UnityEngine.Random.Range(0f, 15f);
+
+						float moveX = Mathf.Sin(angle) * diversion;
+						float moveY = Mathf.Cos(angle) * diversion;
+
+						__instance.transform_bullet_fire.localEulerAngles += new Vector3(
+							moveX,
+							moveY,
+							0
+						);
+
+						FireBulletShotgun(__instance, __instance.round_in_chamber);
+
+						__instance.transform_bullet_fire.localEulerAngles = originalRotation;
+					}
+
+					__instance.rotation_transfer_y_min = 1f;
+					__instance.rotation_transfer_y_max = 2f;
+					__instance.recoil_transfer_y_min = -40f;
+					__instance.recoil_transfer_y_max = 40f;
+
+					break;
+			}
+
+			__instance.transform_bullet_fire.localEulerAngles = originalRotation;
 		}
 
 		private static System.Collections.IEnumerator moveRoundOnCarrier(GunScript __instance, ShellCasingScript round) {
@@ -178,6 +310,24 @@ namespace WinchesterPatch
 			BulletInventory = typeof(LocalAimHandler).GetNestedTypes(BindingFlags.NonPublic | BindingFlags.Instance).Single(t => t.Name == "BulletInventory");
 
 			ModAudioManager.LoadCustomEvents("winchester", Application.persistentDataPath + "/Guns/Winchester/Sounds");
+
+			loading_type = Config.Bind(
+				new ConfigDefinition("Gun settings", "Type of loading"), 
+				"buckshot", 
+				new ConfigDescription("Shell loading to use", new AcceptableValueList<string>(
+					"slug",
+					"buckshot",
+					"birdshot",
+					"iwan_load"
+				))
+			);
+
+			stock_color = Config.Bind(
+				"Gun settings",
+				"Stock color",
+				"#6B2B0D",
+				"Hex color to paint shotgun's stock with"
+			);
 		}
 
 		[HarmonyPatch(typeof(ReceiverCoreScript), "Awake")]
@@ -202,16 +352,61 @@ namespace WinchesterPatch
 			Locale.active_locale_tactics.Add("winchester.winchester_1897", lt);
 
 			__instance.PlayerData.unlocked_gun_names.Add("winchester.winchester_1897");
+
+			ShellCasingScript scs = ((GunScript) __instance.generic_prefabs.Single( item => {
+				return (item is GunScript && (int) ((GunScript) item).gun_model == gun_model);
+			})).loaded_cartridge_prefab.GetComponent<ShellCasingScript>();
+
+			Color color = new Color(0.4f, 0, 0);
+
+			switch (loading_type.Value) {
+				case "slug":
+					color = new Color(0, 0.4f, 0);
+					break;
+				case "buckshot":
+					break;
+				case "birdshot":
+					color = new Color(0, 0, 0.4f);
+					break;
+				case "iwan_load":
+					color = new Color(1f, 1f, 1f);
+					break;
+			}
+
+			scs.go_casing.materials[2].color = color;
+			scs.go_round.materials[2].color = color;
 		}
 
 		[HarmonyPatch(typeof(CartridgeSpec), "SetFromPreset")]
 		[HarmonyPrefix]
 		private static void PatchSetFromPreset(ref CartridgeSpec __instance, CartridgeSpec.Preset preset) {
 			if ((int) preset == gun_model) {
-				__instance.extra_mass = 25f;
-				__instance.mass = 3.5f;
-				__instance.speed = 420f;
-				__instance.diameter = 0.0084f;
+				switch (loading_type.Value) {
+					case "slug": //1 pellet
+						__instance.extra_mass = 25f;
+						__instance.mass = 28.35f;
+						__instance.speed = 390f;
+						__instance.diameter = 0.01853f;
+						break;
+					case "buckshot": //8 pellets
+						__instance.extra_mass = 25f;
+						__instance.mass = 3.5f;
+						__instance.speed = 420f;
+						__instance.diameter = 0.0084f;
+						break;
+					case "birdshot": //72 pellets
+						__instance.extra_mass = 25f;
+						__instance.mass = 0.4f;
+						__instance.speed = 360f;
+						__instance.diameter = 0.004f;
+						break;
+					case "iwan_load": //420 pellets
+						__instance.extra_mass = 25f;
+						__instance.mass = 0.15f;
+						__instance.speed = 300f;
+						__instance.diameter = 0.001f;
+						break;
+				}
 			}
 		}
 
@@ -248,6 +443,11 @@ namespace WinchesterPatch
 			magazine = __instance.transform.Find("magazine_tube").gameObject.AddComponent<TubeMagazineScript>();
 
 			carrier = __instance.transform.Find("carrier/round_ready").GetComponent<InventorySlot>();
+
+			ColorUtility.TryParseHtmlString(stock_color.Value, out Color color);
+
+			__instance.transform.Find("stock").GetComponent<MeshRenderer>().materials[0].color = color;
+			__instance.transform.Find("action_slide/pump_slide").GetComponent<MeshRenderer>().materials[0].color = color;
 			
 			if (ReceiverCoreScript.Instance().game_mode is RankingProgressionGameMode || ReceiverCoreScript.Instance().game_mode is TapeCollectionGameModeBase) {
 				magazine.ammoCount = UnityEngine.Random.Range(0, 4);
@@ -392,32 +592,7 @@ namespace WinchesterPatch
 			if (__instance.trigger.amount == 1 && ___hammer_state == 2 && !lah.character_input.GetButton(14) && action_slide.amount == 0 && !decocking) {
 				 __instance.hammer.amount = Mathf.MoveTowards(__instance.hammer.amount, 0, Time.deltaTime * 50);
 				 if (__instance.hammer.amount == 0) {
-					Vector3 originalRotation = __instance.transform.Find("point_bullet_fire").localEulerAngles;
-
-					__instance.transform_bullet_fire.localEulerAngles += new Vector3(
-							UnityEngine.Random.Range(-1, 1),
-							UnityEngine.Random.Range(-1, 1),
-							0
-					);
-					
-					tryFireBullet.Invoke(__instance, new object[] {1});
-
-					if (!__instance.dry_fired) {
-						//AudioManager.PlayOneShotAttached("event:/guns/deagle/shot", __instance.gameObject);
-
-						for (int i = 0; i < 7; i++) {
-							__instance.transform_bullet_fire.localEulerAngles += new Vector3(
-								UnityEngine.Random.Range(-2f, 2f),
-								UnityEngine.Random.Range(-2f, 2f),
-								0
-							);
-
-							FireBulletShotgun(__instance, __instance.round_in_chamber);
-
-							__instance.transform_bullet_fire.localEulerAngles = originalRotation;
-						}
-					}
-					__instance.transform_bullet_fire.localEulerAngles = originalRotation;
+					TryFireBulletShotgun(ref __instance);
 
 					___hammer_state = 0;
 				 }
