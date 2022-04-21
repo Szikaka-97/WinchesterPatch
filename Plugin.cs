@@ -15,7 +15,7 @@ using R2CustomSounds;
 namespace WinchesterPatch
 {
 	[BepInDependency("R2CustomSounds")]
-	[BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, "1.1.1")]
+	[BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, "1.1.2")]
 	public class Plugin : BaseUnityPlugin
 	{
 		private enum ActionState {
